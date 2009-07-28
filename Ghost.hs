@@ -188,20 +188,34 @@ loadDict = do
 -- foob? a
 -- [etc.]
 
-data GameState = GS Trie String
+-- data GameState = GS Trie String
 
 -- stateMove
 -- stateMove :: GameState -> Move -> GameState
 
-{-
 playGame :: Trie -> String -> IO ()
-playGame (Trie childs) prefix = do
-    putStr prefix ++ "? "
-    c <- getChar
+playGame (Node childs) prefix = do
+    putStr $ prefix ++ "? "
+    uc <- getChar
     putStrLn ""
-    case (lookup c childs) of
-        Word w -> putStr "Challenge"
-        Node n -> 
--}
+    case (lookup uc childs) of
+        Just (Word) -> putStrLn "Challenge_a"
+        Just (Node n) -> case (makeMove (Node n)) of
+            Choose cc -> do
+                putChar cc
+                putStrLn ""
+                case (lookup cc childs) of
+                    Just n -> playGame n (prefix ++ [uc, cc])
+                    Nothing -> error "shouldn't get here!"
+            Forfeit ->
+                putStrLn "I give up!"
+            Challenge ->
+                putStrLn "Challenge_b"
+        Nothing -> putStrLn "Challenge_c"
+
+initGame :: IO ()
+initGame = do
+    dict <- loadDict
+    playGame dict ""
 
 

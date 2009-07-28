@@ -84,13 +84,6 @@ addWord _ (Word)
 buildTrie :: [String] -> Trie
 buildTrie = foldl (flip addWord) emptyTrie
 
--- readDict: read a list of strings from a file.
-
-readDict :: IO [String]
-readDict = do
-    words <- readFile dictFile
-    return (lines words)
-
 -- validWord: determine if a string is a valid word.
 -- Words are at least `shortestWord` long and consist entirely of
 -- lowercase ASCII characters.
@@ -172,6 +165,13 @@ prefixDive "" trie = Just trie
 prefixDive (c:chars) (Node childs) =
     (lookup c childs) >>= (prefixDive chars)
 
+-- readDict: read a list of strings from a file.
+
+readDict :: IO [String]
+readDict = do
+    words <- readFile dictFile
+    return (lines words)
+
 -- loadDict:
 -- Load a dictionary into a trie data structure.
 
@@ -181,4 +181,27 @@ loadDict = do
     words <- return $ filter validWord words
     trie <- return $ buildTrie words
     return trie
+
+-- The game should look like this:
+-- ? f
+-- fo? o
+-- foob? a
+-- [etc.]
+
+data GameState = GS Trie String
+
+-- stateMove
+-- stateMove :: GameState -> Move -> GameState
+
+{-
+playGame :: Trie -> String -> IO ()
+playGame (Trie childs) prefix = do
+    putStr prefix ++ "? "
+    c <- getChar
+    putStrLn ""
+    case (lookup c childs) of
+        Word w -> putStr "Challenge"
+        Node n -> 
+-}
+
 

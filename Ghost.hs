@@ -113,13 +113,28 @@ data Move = Choose Char | Challenge | Forfeit
 -- > makeMove Word
 -- Challenge
 
--- > makeMove (buildTrie ["bar", "baz"])
+-- > makeMove (buildTrie ["a", "aa"])
+-- Forfeit
+
+-- > makeMove (buildTrie ["a", "bb"])
 -- Choose 'b'
+
+-- > makeMove (buildTrie ["lter", "ter"])
+-- Choose 'l'
+
+-- > makeMove (buildTrie ["a", "b"])
+-- Forfeit
+
+-- > makeMove (buildTrie ["fink", "flunk"])
+-- Forfeit
+
+-- > makeMove (buildTrie ["ab", "fink", "flunk"])
+-- Choose 'a'
 
 makeMove :: Trie -> Move
 makeMove Word = Challenge
 makeMove (Node childs) =
-    case (filter (canForceWin . snd) childs) of
+    case (filter (not . canForceWin . snd) childs) of
         ((l,_):_)   -> Choose l
         _           -> Forfeit
 
@@ -133,6 +148,12 @@ makeMove (Node childs) =
 -- > canForceWin Word
 -- True
 
+-- > canForceWin (buildTrie ["a", "aa"])
+-- False
+
+-- > canForceWin (buildTrie ["a", "bb"])
+-- True
+
 -- > canForceWin (buildTrie ["walter", "water"])
 -- True
 
@@ -144,6 +165,12 @@ makeMove (Node childs) =
 
 -- > canForceWin (buildTrie ["fink", "flunk"])
 -- False
+
+-- > canForceWin (buildTrie ["fink", "flunk", "ab"])
+-- True
+
+-- > canForceWin (buildTrie ["babble", "babbling"])
+-- True
 
 canForceWin :: Trie -> Bool
 
@@ -182,16 +209,13 @@ loadDict = do
     trie <- return $ buildTrie words
     return trie
 
--- The game should look like this:
--- ? f
--- fo? o
--- foob? a
--- [etc.]
+-- anyWord:
+-- return any word from a trie node.
+-- > anyWord (buildTrie ["test", "twist"])
+-- "test"
 
--- data GameState = GS Trie String
-
--- stateMove
--- stateMove :: GameState -> Move -> GameState
+anyWord Word = ""
+anyWord (Node ((c, n) : _)) = c : (anyWord n)
 
 playGame :: Trie -> String -> IO ()
 playGame (Node childs) prefix = do
@@ -199,23 +223,25 @@ playGame (Node childs) prefix = do
     uc <- getChar
     putStrLn ""
     case (lookup uc childs) of
-        Just (Word) -> putStrLn "Challenge_a"
+        Just (Word) -> putStrLn $ "You spelled the word " ++ prefix ++ [uc]
         Just (Node n) -> case (makeMove (Node n)) of
             Choose cc -> do
                 putChar cc
                 putStrLn ""
-                case (lookup cc childs) of
+                case (lookup cc n) of
                     Just n -> playGame n (prefix ++ [uc, cc])
-                    Nothing -> error "shouldn't get here!"
+                    Nothing -> do
+                        error "Shouldn't get here"
             Forfeit ->
+                do
+                putStrLn $ show $ n
                 putStrLn "I give up!"
-            Challenge ->
-                putStrLn "Challenge_b"
-        Nothing -> putStrLn "Challenge_c"
+        Nothing -> putStrLn $
+            "Challenge! No word starts with " ++ prefix ++ [uc] ++
+            " (I was thinking of \"" ++ prefix  ++ (anyWord $ Node childs) ++ "\")"
 
 initGame :: IO ()
 initGame = do
     dict <- loadDict
     playGame dict ""
-
 
